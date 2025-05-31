@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Kas, KasFormData } from '@/types/kas';
 import KasTable from '@/components/kas/KasTable';
 import KasForm from '@/components/kas/KasForm';
-import KasStats from '@/components/kas/KasStats';
 
 export default function KasPage() {
   const [kasData, setKasData] = useState<Kas[]>([]);

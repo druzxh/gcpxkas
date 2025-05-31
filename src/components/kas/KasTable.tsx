@@ -34,7 +34,7 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada data kas</h3>
-        <p className="text-gray-500">Klik tombol "Tambah Kas" untuk menambahkan transaksi pertama Anda.</p>
+        <p className="text-gray-500">Klik tombol &quot;Tambah Kas&quot; untuk menambahkan transaksi pertama Anda.</p>
       </div>
     );
   }
