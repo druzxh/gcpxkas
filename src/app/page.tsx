@@ -2,17 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Kas } from '@/types/kas';
+import { Kas } from '@/types/kas'; 
+import { Anggota } from '@/types/anggota';
 import KasStats from '@/components/kas/KasStats';
+import AnggotaStats from '@/components/anggota/AnggotaStats';
 
 export default function Dashboard() {
   const [kasData, setKasData] = useState<Kas[]>([]);
+  const [anggotaData, setAnggotaData] = useState<Anggota[]>([]);
 
   // Load data dari localStorage
   useEffect(() => {
-    const savedData = localStorage.getItem('kasData');
-    if (savedData) {
-      setKasData(JSON.parse(savedData));
+    const savedKasData = localStorage.getItem('kasData');
+    if (savedKasData) {
+      setKasData(JSON.parse(savedKasData));
+    }
+
+    const savedAnggotaData = localStorage.getItem('anggotaData');
+    if (savedAnggotaData) {
+      setAnggotaData(JSON.parse(savedAnggotaData));
     }
   }, []);
 
@@ -45,11 +53,19 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Ringkasan sistem manajemen kas Squad GCP</p>
+          <p className="text-gray-600">Ringkasan sistem manajemen kas dan anggota Squad GCP</p>
         </div>
 
-        {/* Stats */}
-        <KasStats data={kasData} />
+        {/* Stats Overview */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Kas</h2>
+          <KasStats data={kasData} />
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Anggota</h2>
+          <AnggotaStats data={anggotaData} />
+        </div>
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,23 +143,50 @@ export default function Dashboard() {
 
             {/* Summary Info */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Transaksi:</span>
-                  <span className="font-medium">{kasData.length}</span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Ringkasan Data</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Kas</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Transaksi:</span>
+                      <span className="font-medium">{kasData.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Transaksi Masuk:</span>
+                      <span className="font-medium text-green-600">
+                        {kasData.filter(k => k.jenis === 'masuk').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Transaksi Keluar:</span>
+                      <span className="font-medium text-red-600">
+                        {kasData.filter(k => k.jenis === 'keluar').length}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Transaksi Masuk:</span>
-                  <span className="font-medium text-green-600">
-                    {kasData.filter(k => k.jenis === 'masuk').length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Transaksi Keluar:</span>
-                  <span className="font-medium text-red-600">
-                    {kasData.filter(k => k.jenis === 'keluar').length}
-                  </span>
+                
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Anggota</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Anggota:</span>
+                      <span className="font-medium">{anggotaData.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Anggota Aktif:</span>
+                      <span className="font-medium text-green-600">
+                        {anggotaData.filter(a => a.status === 'aktif').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Anggota Non-Aktif:</span>
+                      <span className="font-medium text-red-600">
+                        {anggotaData.filter(a => a.status === 'non-aktif').length}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

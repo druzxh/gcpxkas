@@ -7,6 +7,7 @@ export default function Navbar() {
   const navigation = [
     { name: 'Dashboard', href: '/' },
     { name: 'Manajemen Kas', href: '/kas' },
+    { name: 'Manajemen Anggota', href: '/anggota' },
   ];
 
   return (
