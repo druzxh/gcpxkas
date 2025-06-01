@@ -2,57 +2,80 @@
 
 import { useState, useEffect } from 'react';
 import { Kas, KasFormData } from '@/types/kas';
+import { useAuth } from '@/contexts/AuthContext';
+import { KasService } from '@/services/kasService';
 import KasTable from '@/components/kas/KasTable';
 import KasForm from '@/components/kas/KasForm';
+import KasStats from '@/components/kas/KasStats';
 
 export default function KasPage() {
+  const { user } = useAuth();
   const [kasData, setKasData] = useState<Kas[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingKas, setEditingKas] = useState<Kas | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterJenis, setFilterJenis] = useState<'all' | 'masuk' | 'keluar'>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Load data dari localStorage saat komponen dimount
+  // Load data from Supabase
   useEffect(() => {
-    const savedData = localStorage.getItem('kasData');
-    if (savedData) {
-      setKasData(JSON.parse(savedData));
+    if (user) {
+      loadKasData();
     }
-  }, []);
+  }, [user]);
 
-  // Save data ke localStorage setiap kali kasData berubah
-  useEffect(() => {
-    localStorage.setItem('kasData', JSON.stringify(kasData));
-  }, [kasData]);
-
-  const handleCreate = (formData: KasFormData) => {
-    const newKas: Kas = {
-      id: Date.now().toString(),
-      ...formData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setKasData([...kasData, newKas]);
-    setIsFormOpen(false);
+  const loadKasData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const data = await KasService.getAll(user.id);
+      setKasData(data);
+    } catch (err) {
+      setError('Gagal memuat data kas');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdate = (formData: KasFormData) => {
+  const handleCreate = async (formData: KasFormData) => {
+    if (!user) return;
+    
+    try {
+      const newKas = await KasService.create(user.id, formData);
+      setKasData([newKas, ...kasData]);
+      setIsFormOpen(false);
+    } catch (err) {
+      setError('Gagal menambah data kas');
+      console.error(err);
+    }
+  };
+
+  const handleUpdate = async (formData: KasFormData) => {
     if (!editingKas) return;
     
-    const updatedKas: Kas = {
-      ...editingKas,
-      ...formData,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    setKasData(kasData.map(kas => kas.id === editingKas.id ? updatedKas : kas));
-    setEditingKas(null);
-    setIsFormOpen(false);
+    try {
+      const updatedKas = await KasService.update(editingKas.id, formData);
+      setKasData(kasData.map(kas => kas.id === editingKas.id ? updatedKas : kas));
+      setEditingKas(null);
+      setIsFormOpen(false);
+    } catch (err) {
+      setError('Gagal mengupdate data kas');
+      console.error(err);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus data kas ini?')) {
-      setKasData(kasData.filter(kas => kas.id !== id));
+      try {
+        await KasService.delete(id);
+        setKasData(kasData.filter(kas => kas.id !== id));
+      } catch (err) {
+        setError('Gagal menghapus data kas');
+        console.error(err);
+      }
     }
   };
 
@@ -84,10 +107,31 @@ export default function KasPage() {
         </div>
 
         {/* Stats */}
-        {/* <KasStats data={kasData} /> */}
+        <KasStats data={kasData} />
 
-        {/* Controls */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600">{error}</p>
+            <button 
+              onClick={() => setError('')}
+              className="text-red-600 hover:text-red-800 text-sm font-medium mt-2"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Memuat data kas...</p>
+          </div>
+        ) : (
+          <>
+            {/* Controls */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               {/* Search */}
@@ -119,16 +163,17 @@ export default function KasPage() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               + Tambah Kas
-            </button>
+            </button>            </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <KasTable 
-          data={filteredData}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+            {/* Table */}
+            <KasTable 
+              data={filteredData}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </>
+        )}
 
         {/* Form Modal */}
         {isFormOpen && (

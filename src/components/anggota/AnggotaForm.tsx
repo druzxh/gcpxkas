@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Anggota, AnggotaFormData } from '@/types/anggota';
+import { log } from 'console';
 
 interface AnggotaFormProps {
   anggota?: Anggota | null;
@@ -19,7 +20,7 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Posisi yang tersedia
+  // Role yang tersedia
   const roleOptions = [
     'Jungler',
     'Explaner',
@@ -39,7 +40,7 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
         telepon: anggota.telepon,
         status: anggota.status,
         role: anggota.role,
-        nickname: anggota.nickname || '',
+        nickname: anggota.nickname,
       });
     }
   }, [anggota]);
@@ -74,6 +75,7 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log('handleSubmit called with formData:', formData);
     e.preventDefault();
     if (validateForm()) {
       onSubmit(formData);
@@ -89,6 +91,9 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
       setErrors(newErrors);
     }
   };
+
+    console.log('AnggotaForm initialized with formData:', formData);
+    console.log('Errors:', errors);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -140,7 +145,7 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
                 type="text"
                 value={formData.nickname}
                 onChange={(e) => handleInputChange('nickname', e.target.value)}
-                placeholder="Masukkan nickname lengkap"
+                placeholder="Masukkan nickname"
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.nickname ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -188,16 +193,16 @@ export default function AnggotaForm({ anggota, onSubmit, onCancel }: AnggotaForm
               )}
             </div>
 
-            {/* Posisi */}
+            {/* Role */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Posisi *
+                Role *
               </label>
               <select
                 value={formData.role}
                 onChange={(e) => handleInputChange('role', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.posisi ? 'border-red-500' : 'border-gray-300'
+                  errors.role ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
                 <option value="">Pilih role...</option>

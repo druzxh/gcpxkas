@@ -4,25 +4,45 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Kas } from '@/types/kas'; 
 import { Anggota } from '@/types/anggota';
+import { useAuth } from '@/contexts/AuthContext';
+import { KasService } from '@/services/kasService';
+import { AnggotaService } from '@/services/anggotaService';
 import KasStats from '@/components/kas/KasStats';
 import AnggotaStats from '@/components/anggota/AnggotaStats';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [kasData, setKasData] = useState<Kas[]>([]);
   const [anggotaData, setAnggotaData] = useState<Anggota[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Load data dari localStorage
+  // Load data from Supabase
   useEffect(() => {
-    const savedKasData = localStorage.getItem('kasData');
-    if (savedKasData) {
-      setKasData(JSON.parse(savedKasData));
+    if (user) {
+      loadData();
     }
+  }, [user]);
 
-    const savedAnggotaData = localStorage.getItem('anggotaData');
-    if (savedAnggotaData) {
-      setAnggotaData(JSON.parse(savedAnggotaData));
+  const loadData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const [kasResult, anggotaResult] = await Promise.all([
+        KasService.getAll(user.id),
+        AnggotaService.getAll(user.id)
+      ]);
+      setKasData(kasResult);
+      setAnggotaData(anggotaResult);
+      setError(''); // Clear any previous errors
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      setError('Gagal memuat data dashboard');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   // Get recent transactions (5 latest)
   const recentTransactions = kasData
@@ -56,21 +76,48 @@ export default function Dashboard() {
           <p className="text-gray-600">Ringkasan sistem manajemen kas dan anggota Squad GCP</p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Kas</h2>
-          <KasStats data={kasData} />
-        </div>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600">{error}</p>
+            <button 
+              onClick={() => {
+                setError('');
+                loadData(); // Retry loading data
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium mt-2"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        )}
 
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Anggota</h2>
-          <AnggotaStats data={anggotaData} />
-        </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Memuat data dashboard...</p>
+          </div>
+        ) : (
+          <>
+            {/* Stats Overview */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Kas</h2>
+              <KasStats data={kasData} />
+            </div>
+
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Anggota</h2>
+              <AnggotaStats data={anggotaData} />
+            </div>
+          </>
+        )}
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Transactions */}
-          <div className="lg:col-span-2">
+        {!loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Transactions */}
+            <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Transaksi Terbaru</h2>
@@ -190,8 +237,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -2,58 +2,81 @@
 
 import { useState, useEffect } from 'react';
 import { Anggota, AnggotaFormData } from '@/types/anggota';
+import { useAuth } from '@/contexts/AuthContext';
+import { AnggotaService } from '@/services/anggotaService';
 import AnggotaTable from '@/components/anggota/AnggotaTable';
 import AnggotaForm from '@/components/anggota/AnggotaForm';
 import AnggotaStats from '@/components/anggota/AnggotaStats';
 
 export default function AnggotaPage() {
+  const { user } = useAuth();
   const [anggotaData, setAnggotaData] = useState<Anggota[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAnggota, setEditingAnggota] = useState<Anggota | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'aktif' | 'non-aktif'>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Load data dari localStorage saat komponen dimount
+  // Load data from Supabase
   useEffect(() => {
-    const savedData = localStorage.getItem('anggotaData');
-    if (savedData) {
-      setAnggotaData(JSON.parse(savedData));
+    if (user) {
+      loadAnggotaData();
     }
-  }, []);
+  }, [user]);
 
-  // Save data ke localStorage setiap kali anggotaData berubah
-  useEffect(() => {
-    localStorage.setItem('anggotaData', JSON.stringify(anggotaData));
-  }, [anggotaData]);
-
-  const handleCreate = (formData: AnggotaFormData) => {
-    const newAnggota: Anggota = {
-      id: Date.now().toString(),
-      ...formData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setAnggotaData([...anggotaData, newAnggota]);
-    setIsFormOpen(false);
+  const loadAnggotaData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const data = await AnggotaService.getAll(user.id);
+      setAnggotaData(data);
+    } catch (err) {
+      setError('Gagal memuat data anggota');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdate = (formData: AnggotaFormData) => {
+  const handleCreate = async (formData: AnggotaFormData) => {
+    if (!user) return;
+    
+    try {
+      const newAnggota = await AnggotaService.create(user.id, formData);
+      setAnggotaData([newAnggota, ...anggotaData]);
+      setIsFormOpen(false);
+    } catch (err) {
+      setError('Gagal menambah data anggota');
+      console.error(err);
+    }
+  };
+
+  const handleUpdate = async (formData: AnggotaFormData) => {
     if (!editingAnggota) return;
     
-    const updatedAnggota: Anggota = {
-      ...editingAnggota,
-      ...formData,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    setAnggotaData(anggotaData.map(anggota => anggota.id === editingAnggota.id ? updatedAnggota : anggota));
-    setEditingAnggota(null);
-    setIsFormOpen(false);
+    try {
+      const updatedAnggota = await AnggotaService.update(editingAnggota.id, formData);
+      setAnggotaData(anggotaData.map(anggota => anggota.id === editingAnggota.id ? updatedAnggota : anggota));
+      setEditingAnggota(null);
+      setIsFormOpen(false);
+    } catch (err) {
+      setError('Gagal mengupdate data anggota');
+      console.error(err);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus data anggota ini?')) {
-      setAnggotaData(anggotaData.filter(anggota => anggota.id !== id));
+      try {
+        await AnggotaService.delete(id);
+        setAnggotaData(anggotaData.filter(anggota => anggota.id !== id));
+      } catch (err) {
+        setError('Gagal menghapus data anggota');
+        console.error(err);
+      }
     }
   };
 
@@ -67,13 +90,18 @@ export default function AnggotaPage() {
     setIsFormOpen(false);
   };
 
+  // Get unique roles for filter
+  const roles = Array.from(new Set(anggotaData.map(a => a.role))).sort();
+
   // Filter dan search data
   const filteredData = anggotaData.filter(anggota => {
     const matchesSearch = anggota.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          anggota.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         anggota.role.toLowerCase().includes(searchTerm.toLowerCase());
+                         anggota.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         anggota.nickname.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || anggota.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesRole = filterRole === 'all' || anggota.role === filterRole;
+    return matchesSearch && matchesStatus && matchesRole;
   });
 
   return (
@@ -88,8 +116,29 @@ export default function AnggotaPage() {
         {/* Stats */}
         <AnggotaStats data={anggotaData} />
 
-        {/* Controls */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600">{error}</p>
+            <button 
+              onClick={() => setError('')}
+              className="text-red-600 hover:text-red-800 text-sm font-medium mt-2"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Memuat data anggota...</p>
+          </div>
+        ) : (
+          <>
+            {/* Controls */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               {/* Search */}
@@ -113,6 +162,20 @@ export default function AnggotaPage() {
                 <option value="aktif">Aktif</option>
                 <option value="non-aktif">Non-Aktif</option>
               </select>
+
+              {/* Filter Role */}
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Semua Role</option>
+                {roles.map(role => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
             </div>
             
             {/* Add Button */}
@@ -121,16 +184,17 @@ export default function AnggotaPage() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               + Tambah Anggota
-            </button>
+            </button>            </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <AnggotaTable 
-          data={filteredData}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+            {/* Table */}
+            <AnggotaTable 
+              data={filteredData}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </>
+        )}
 
         {/* Form Modal */}
         {isFormOpen && (

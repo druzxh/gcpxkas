@@ -1,37 +1,166 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Squad GCP Management System
 
-## Getting Started
+A comprehensive management system for organizations to handle financial transactions (kas) and member data. Built with Next.js, TypeScript, Tailwind CSS, and Supabase.
 
-First, run the development server:
+## 🚀 Features
 
+### Authentication & Security
+- **Secure Authentication**: Email/password login with Supabase Auth
+- **Row Level Security**: Users can only access their own data
+- **Protected Routes**: Authentication required for all operations
+- **Session Management**: Automatic login state persistence
+
+### Financial Management (Kas)
+- **Transaction Management**: Add, edit, delete income and expense records
+- **Categories & Types**: Organize transactions by category and type (income/expense)
+- **Search & Filter**: Find transactions by description, category, or type
+- **Financial Statistics**: Real-time calculations of totals, balance, and trends
+- **Date Management**: Track transactions by date with proper formatting
+
+### Member Management (Anggota)
+- **Member Profiles**: Comprehensive member information (name, email, role, etc.)
+- **Status Tracking**: Manage active/inactive member status
+- **Role Management**: Assign and track member roles
+- **Search & Filter**: Find members by name, email, role, or status
+- **Member Statistics**: Overview of total members and status distribution
+
+### Dashboard & Analytics
+- **Overview Dashboard**: Quick stats and recent activity
+- **Recent Transactions**: Latest financial activities
+- **Quick Actions**: Fast access to common operations
+- **Data Summaries**: Comprehensive statistics and insights
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **State Management**: React Context API
+- **Deployment**: Vercel-ready
+
+## 📋 Prerequisites
+
+- Node.js 18+ and npm/yarn
+- A Supabase account and project
+- Git for version control
+
+## 🔧 Installation & Setup
+
+1. **Clone the repository**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd gcp
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Install dependencies**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Set up Supabase**
+   - Follow the detailed setup guide in `SUPABASE_SETUP.md`
+   - Create your Supabase project
+   - Run the database setup SQL
+   - Configure environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Configure environment variables**
+```bash
+cp .env.local.example .env.local
+# Edit .env.local with your Supabase credentials
+```
 
-## Learn More
+5. **Run the development server**
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. **Open the application**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Dashboard
+│   ├── kas/               # Financial management
+│   └── anggota/           # Member management
+├── components/            # Reusable UI components
+│   ├── auth/              # Authentication components
+│   ├── kas/               # Financial management components
+│   └── anggota/           # Member management components
+├── contexts/              # React Context providers
+├── services/              # API service layers
+├── types/                 # TypeScript type definitions
+└── lib/                   # Utility libraries
+```
 
-## Deploy on Vercel
+## 🗄️ Database Schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application uses two main tables:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# gcpxkas
+### `kas` (Financial Transactions)
+- Transaction details (description, amount, type, category)
+- Date tracking and user association
+- Row-level security for data isolation
+
+### `anggota` (Members)
+- Member information (name, email, role, status)
+- Join date and status tracking
+- User-specific data access
+
+See `database-setup.sql` for complete schema.
+
+## 🔐 Security Features
+
+- **Row Level Security (RLS)**: Database-level access control
+- **Authentication Required**: All operations require login
+- **Data Isolation**: Users only see their own data
+- **Secure API**: All operations through Supabase's secure endpoints
+- **Input Validation**: Client and server-side validation
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy automatically
+
+### Other Platforms
+The application works on any platform supporting Node.js:
+- Netlify
+- Railway
+- Heroku
+- DigitalOcean App Platform
+
+## 📚 Documentation
+
+- **Setup Guide**: `SUPABASE_SETUP.md` - Complete Supabase integration guide
+- **Migration Tool**: `migration-utility.js` - Migrate from localStorage
+- **Database Schema**: `database-setup.sql` - Database setup SQL
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+1. Check the setup documentation
+2. Review browser console for errors
+3. Verify Supabase configuration
+4. Check database logs in Supabase dashboard
+
+---
+
+Built with ❤️ for Squad GCP

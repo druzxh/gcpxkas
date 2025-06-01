@@ -1,14 +1,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/' },
     { name: 'Manajemen Kas', href: '/kas' },
     { name: 'Manajemen Anggota', href: '/anggota' },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -35,6 +41,18 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              {user?.email}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Keluar
+            </button>
           </div>
         </div>
       </div>
