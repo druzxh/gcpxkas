@@ -12,7 +12,7 @@ export default function AnggotaStats({ data }: AnggotaStatsProps) {
   const anggotaNonAktif = data.filter(anggota => anggota.status === 'non-aktif').length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
       {/* Total Anggota */}
       <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
         <div className="flex items-center">

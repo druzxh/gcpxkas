@@ -110,7 +110,7 @@ export default function AnggotaPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Manajemen Anggota</h1>
-          <p className="text-gray-600">Kelola data anggota organisasi atau perusahaan</p>
+          <p className="text-gray-600">Kelola data anggota squad</p>
         </div>
 
         {/* Stats */}
