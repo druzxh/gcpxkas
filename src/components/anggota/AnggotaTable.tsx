@@ -17,7 +17,7 @@ export default function AnggotaTable({ data, onEdit, onDelete }: AnggotaTablePro
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada data anggota</h3>
-        <p className="text-gray-500">Klik tombol "Tambah Anggota" untuk menambahkan anggota pertama Anda.</p>
+          <p className="text-gray-500">Klik tombol &quot;Tambah Anggota&quot; untuk menambahkan anggota pertama Anda.</p>
       </div>
     );
   }

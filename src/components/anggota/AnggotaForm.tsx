@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Anggota, AnggotaFormData } from '@/types/anggota';
-import { log } from 'console';
-
 interface AnggotaFormProps {
   anggota?: Anggota | null;
   onSubmit: (data: AnggotaFormData) => void;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Kas, KasFormData } from '@/types/kas';
 import { useAuth } from '@/contexts/AuthContext';
 import { KasService } from '@/services/kasService';
@@ -19,13 +19,7 @@ export default function KasPage() {
   const [error, setError] = useState('');
 
   // Load data from Supabase
-  useEffect(() => {
-    if (user) {
-      loadKasData();
-    }
-  }, [user]);
-
-  const loadKasData = async () => {
+  const loadKasData = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -38,7 +32,13 @@ export default function KasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadKasData();
+    }
+  }, [user, loadKasData]);
 
   const handleCreate = async (formData: KasFormData) => {
     if (!user) return;

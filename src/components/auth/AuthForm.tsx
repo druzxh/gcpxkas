@@ -47,6 +47,7 @@ export default function AuthForm() {
         }
       }
     } catch (err) {
+      console.error(err)
       setError('Terjadi kesalahan yang tidak terduga');
     }
 

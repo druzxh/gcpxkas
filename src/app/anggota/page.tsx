@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {useCallback, useState, useEffect } from 'react';
 import { Anggota, AnggotaFormData } from '@/types/anggota';
 import { useAuth } from '@/contexts/AuthContext';
 import { AnggotaService } from '@/services/anggotaService';
@@ -20,15 +20,9 @@ export default function AnggotaPage() {
   const [error, setError] = useState('');
 
   // Load data from Supabase
-  useEffect(() => {
-    if (user) {
-      loadAnggotaData();
-    }
-  }, [user]);
-
-  const loadAnggotaData = async () => {
+  const loadAnggotaData = useCallback(async () => {
     if (!user) return;
-    
+  
     try {
       setLoading(true);
       const data = await AnggotaService.getAll(user.id);
@@ -39,7 +33,13 @@ export default function AnggotaPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadAnggotaData();
+    }
+  }, [user, loadAnggotaData]);
 
   const handleCreate = async (formData: AnggotaFormData) => {
     if (!user) return;

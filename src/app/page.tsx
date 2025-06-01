@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Kas } from '@/types/kas'; 
 import { Anggota } from '@/types/anggota';
@@ -18,13 +18,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   // Load data from Supabase
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -42,7 +36,13 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+    useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
 
   // Get recent transactions (5 latest)
   const recentTransactions = kasData
