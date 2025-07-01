@@ -67,6 +67,32 @@ export default function Dashboard() {
     });
   };
 
+  // Get keterangan summary (calculate totals by keterangan/description)
+  const getKeteranganSummary = () => {
+    const keteranganTotals: { [key: string]: { masuk: number; keluar: number; total: number } } = {};
+    
+    kasData.forEach(kas => {
+      if (!keteranganTotals[kas.keterangan]) {
+        keteranganTotals[kas.keterangan] = { masuk: 0, keluar: 0, total: 0 };
+      }
+      
+      if (kas.jenis === 'masuk') {
+        keteranganTotals[kas.keterangan].masuk += kas.jumlah;
+      } else {
+        keteranganTotals[kas.keterangan].keluar += kas.jumlah;
+      }
+      
+      keteranganTotals[kas.keterangan].total = keteranganTotals[kas.keterangan].masuk - keteranganTotals[kas.keterangan].keluar;
+    });
+    
+    // Convert to array and sort by total (descending)
+    return Object.entries(keteranganTotals)
+      .map(([keterangan, totals]) => ({ keterangan, ...totals }))
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
+  };
+
+  const keteranganSummary = getKeteranganSummary();
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -109,6 +135,95 @@ export default function Dashboard() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Anggota</h2>
               <AnggotaStats data={anggotaData} />
+            </div>
+
+            {/* Keterangan Summary Table */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ringkasan per Keterangan</h2>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {keteranganSummary.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Keterangan
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Masuk
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Keluar
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Saldo
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {keteranganSummary.map((item) => (
+                          <tr key={item.keterangan} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <div className="max-w-xs truncate" title={item.keterangan}>
+                                {item.keterangan}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                              <span className="text-green-600 font-medium">
+                                {item.masuk > 0 ? formatCurrency(item.masuk) : '-'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                              <span className="text-red-600 font-medium">
+                                {item.keluar > 0 ? formatCurrency(item.keluar) : '-'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">
+                              <span className={`${
+                                item.total >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {item.total >= 0 ? '+' : ''}{formatCurrency(item.total)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr>
+                          <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                            Total Keseluruhan
+                          </td>
+                          <td className="px-6 py-3 text-sm text-right font-bold text-green-600">
+                            {formatCurrency(keteranganSummary.reduce((sum, item) => sum + item.masuk, 0))}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-right font-bold text-red-600">
+                            {formatCurrency(keteranganSummary.reduce((sum, item) => sum + item.keluar, 0))}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-right font-bold text-gray-900">
+                            {(() => {
+                              const grandTotal = keteranganSummary.reduce((sum, item) => sum + item.total, 0);
+                              return (
+                                <span className={grandTotal >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {grandTotal >= 0 ? '+' : ''}{formatCurrency(grandTotal)}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                      </svg>
+                    </div>
+                    <p className="text-gray-500">Belum ada data untuk ditampilkan</p>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -236,6 +351,43 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Keterangan Summary */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Ringkasan Keterangan</h3>
+              {keteranganSummary.length > 0 ? (
+                <div className="space-y-4">
+                  {keteranganSummary.slice(0, 5).map((item) => (
+                    <div key={item.keterangan} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          item.total >= 0 ? 'bg-green-500' : 'bg-red-500'
+                        }`}></div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm truncate max-w-32" title={item.keterangan}>
+                            {item.keterangan}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">
+                          Masuk: {formatCurrency(item.masuk)} • Keluar: {formatCurrency(item.keluar)}
+                        </p>
+                        <p className={`font-semibold text-sm ${
+                          item.total >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {item.total >= 0 ? '+' : ''}{formatCurrency(item.total)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Belum ada ringkasan keterangan</p>
+                </div>
+              )}
             </div>
             </div>
           </div>
