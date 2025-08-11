@@ -26,7 +26,7 @@ export default function AnggotaPage() {
     try {
       setLoading(true);
       const data = await AnggotaService.getAll(user.id);
-      setAnggotaData(data);
+      setAnggotaData(data.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())); // Sort by created_at (oldest first)
     } catch (err) {
       setError('Gagal memuat data anggota');
       console.error(err);

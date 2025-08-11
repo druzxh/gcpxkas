@@ -49,10 +49,8 @@ export default function KasPage() {
       const newKas = await KasService.create(user.id, formData);
       setKasData([newKas, ...kasData]);
       setIsFormOpen(false);
-      setError(''); // Clear any previous errors
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menambah data kas';
-      setError(errorMessage);
+    } catch (err) {
+      setError('Gagal menambah data kas');
       console.error(err);
     }
   };
@@ -65,10 +63,8 @@ export default function KasPage() {
       setKasData(kasData.map(kas => kas.id === editingKas.id ? updatedKas : kas));
       setEditingKas(null);
       setIsFormOpen(false);
-      setError(''); // Clear any previous errors
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate data kas';
-      setError(errorMessage);
+    } catch (err) {
+      setError('Gagal mengupdate data kas');
       console.error(err);
     }
   };
@@ -144,44 +140,44 @@ export default function KasPage() {
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                  {/* Search */}
-                  <div className="flex-1 max-w-md">
-                    <input
-                      type="text"
-                      placeholder="Cari keterangan, kategori, atau nama anggota..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  {/* Filter */}
-                  <select
-                    value={filterJenis}
-                    onChange={(e) => setFilterJenis(e.target.value as 'all' | 'masuk' | 'keluar')}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Semua Jenis</option>
-                    <option value="masuk">Kas Masuk</option>
-                    <option value="keluar">Kas Keluar</option>
-                  </select>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowPembayaranBulanan(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    📊 Laporan Iuran
-                  </button>
-                  <button
-                    onClick={() => setIsFormOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    + Tambah Kas
-                  </button>
-                </div>
+              {/* Search */}
+              <div className="flex-1 max-w-md">
+                <input
+                  type="text"
+                  placeholder="Cari keterangan, kategori, atau nama anggota..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              {/* Filter */}
+              <select
+                value={filterJenis}
+                onChange={(e) => setFilterJenis(e.target.value as 'all' | 'masuk' | 'keluar')}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Semua Jenis</option>
+                <option value="masuk">Kas Masuk</option>
+                <option value="keluar">Kas Keluar</option>
+              </select>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowPembayaranBulanan(true)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                📊 Laporan Iuran
+              </button>
+              <button
+                onClick={() => setIsFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                + Tambah Kas
+              </button>
+            </div>
               </div>
             </div>
 

@@ -1,5 +1,14 @@
 import { supabase } from '@/lib/supabase';
-import { Kas, KasFormData } from '@/types/kas';
+import { Kas, KasFormData, PembayaranBulanan } from '@/types/kas';
+import { MonthUtils } from '@/lib/monthUtils';
+
+interface RingkasanKeterangan {
+  keterangan: string;
+  pemasukan: number;
+  pengeluaran: number;
+  saldo: number;
+  kategori: string;
+}
 
 export class KasService {
   static async getAll(userId: string): Promise<Kas[]> {
@@ -27,12 +36,23 @@ export class KasService {
       tanggal: item.tanggal,
       anggotaId: item.anggota_id,
       anggota: item.anggota,
+      bulanPembayaran: item.bulan_pembayaran,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     }));
   }
 
   static async create(userId: string, data: KasFormData): Promise<Kas> {
+    // Validasi pembayaran bulanan jika ada
+    if (data.anggotaId && data.bulanPembayaran) {
+      const sudahBayar = await this.checkPembayaranBulanan(userId, data.anggotaId, data.bulanPembayaran);
+      
+      // Jika bulan ini dan sudah bayar 20rb, tidak boleh bayar lagi
+      if (MonthUtils.isCurrentMonth(data.bulanPembayaran) && sudahBayar.sudahBayar && sudahBayar.jumlahBayar >= 20000) {
+        throw new Error(`Anggota ini sudah membayar iuran untuk ${MonthUtils.parseBulanToLabel(data.bulanPembayaran)} sebesar Rp ${sudahBayar.jumlahBayar.toLocaleString('id-ID')}. Tidak dapat menambah pembayaran untuk bulan yang sama.`);
+      }
+    }
+
     const kasData = {
       user_id: userId,
       anggota_id: data.anggotaId || null,
@@ -41,6 +61,7 @@ export class KasService {
       kategori: data.kategori,
       keterangan: data.keterangan,
       tanggal: data.tanggal,
+      bulan_pembayaran: data.bulanPembayaran || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -69,6 +90,7 @@ export class KasService {
       tanggal: result.tanggal,
       anggotaId: result.anggota_id,
       anggota: result.anggota,
+      bulanPembayaran: result.bulan_pembayaran,
       createdAt: result.created_at,
       updatedAt: result.updated_at,
     };
@@ -82,6 +104,7 @@ export class KasService {
       kategori: data.kategori,
       keterangan: data.keterangan,
       tanggal: data.tanggal,
+      bulan_pembayaran: data.bulanPembayaran || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -110,6 +133,7 @@ export class KasService {
       tanggal: result.tanggal,
       anggotaId: result.anggota_id,
       anggota: result.anggota,
+      bulanPembayaran: result.bulan_pembayaran,
       createdAt: result.created_at,
       updatedAt: result.updated_at,
     };
@@ -175,9 +199,78 @@ export class KasService {
       });
       
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, RingkasanKeterangan>);
 
-    return Object.values(ringkasan)
-      .sort((a: any, b: any) => b.saldo - a.saldo);
+    return (Object.values(ringkasan) as RingkasanKeterangan[])
+      .sort((a: RingkasanKeterangan, b: RingkasanKeterangan) => b.saldo - a.saldo);
+  }
+
+  /**
+   * Check apakah anggota sudah membayar untuk bulan tertentu
+   */
+  static async checkPembayaranBulanan(userId: string, anggotaId: string, bulan: string): Promise<PembayaranBulanan> {
+    const { data, error } = await supabase
+      .from('kas')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('anggota_id', anggotaId)
+      .eq('bulan_pembayaran', bulan)
+      .eq('jenis', 'masuk');
+
+    if (error) throw error;
+
+    const totalBayar = data.reduce((sum, kas) => sum + kas.jumlah, 0);
+    const tanggalBayarTerakhir = data.length > 0 ? data[data.length - 1].tanggal : undefined;
+
+    return {
+      anggotaId,
+      bulan,
+      sudahBayar: totalBayar > 0,
+      jumlahBayar: totalBayar,
+      tanggalBayar: tanggalBayarTerakhir
+    };
+  }
+
+  /**
+   * Get semua pembayaran bulanan untuk semua anggota
+   */
+  static async getPembayaranBulananByMonth(userId: string, bulan: string): Promise<PembayaranBulanan[]> {
+    const { data, error } = await supabase
+      .from('kas')
+      .select(`
+        *,
+        anggota:anggota_id (
+          id,
+          nama,
+          nickname
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('bulan_pembayaran', bulan)
+      .eq('jenis', 'masuk');
+
+    if (error) throw error;
+
+    // Group by anggota
+    const pembayaranMap = new Map<string, PembayaranBulanan>();
+    
+    data.forEach(kas => {
+      const anggotaId = kas.anggota_id;
+      if (!pembayaranMap.has(anggotaId)) {
+        pembayaranMap.set(anggotaId, {
+          anggotaId,
+          bulan,
+          sudahBayar: false,
+          jumlahBayar: 0,
+        });
+      }
+      
+      const pembayaran = pembayaranMap.get(anggotaId)!;
+      pembayaran.jumlahBayar += kas.jumlah;
+      pembayaran.sudahBayar = true;
+      pembayaran.tanggalBayar = kas.tanggal;
+    });
+
+    return Array.from(pembayaranMap.values());
   }
 }

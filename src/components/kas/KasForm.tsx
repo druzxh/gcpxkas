@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Kas, KasFormData } from '@/types/kas';
+import { Kas, KasFormData, BulanOption } from '@/types/kas';
 import { Anggota } from '@/types/anggota';
 import { AnggotaService } from '@/services/anggotaService';
+import { KasService } from '@/services/kasService';
+import { MonthUtils } from '@/lib/monthUtils';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface KasFormProps {
@@ -13,6 +15,9 @@ interface KasFormProps {
 export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
   const { user } = useAuth();
   const [anggotaList, setAnggotaList] = useState<Anggota[]>([]);
+  const [bulanOptions, setBulanOptions] = useState<BulanOption[]>([]);
+  const [isIuranBulanan, setIsIuranBulanan] = useState(false);
+  const [pembayaranInfo, setPembayaranInfo] = useState<string>('');
   const [formData, setFormData] = useState<KasFormData>({
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: '',
@@ -20,12 +25,14 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
     jumlah: 0,
     kategori: '',
     anggotaId: null,
+    bulanPembayaran: null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Kategori yang tersedia
   const kategoriOptions = [
+    'Iuran Bulanan',
     'Tabungan',
     'Operasional',
     'Gaji',
@@ -40,24 +47,35 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
     'Lainnya',
   ];
 
-  // Load anggota list saat component mount
+  // Load anggota list dan bulan options saat component mount
   useEffect(() => {
-    const loadAnggota = async () => {
+    const loadData = async () => {
       if (user) {
         try {
           const data = await AnggotaService.getAll(user.id);
-          setAnggotaList(data.filter(anggota => anggota.status === 'aktif'));
+          setAnggotaList(data
+            .filter(anggota => anggota.status === 'aktif')
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // Sort by created_at (oldest first)
+          );
         } catch (error) {
           console.error('Error loading anggota:', error);
         }
       }
     };
-    loadAnggota();
+    
+    // Load bulan options
+    const options = MonthUtils.generateBulanOptions();
+    setBulanOptions(options);
+    
+    loadData();
   }, [user]);
 
   // Fill form jika editing
   useEffect(() => {
     if (kas) {
+      const isIuran = kas.kategori === 'Iuran Bulanan' && !!kas.bulanPembayaran;
+      setIsIuranBulanan(isIuran);
+      
       setFormData({
         tanggal: kas.tanggal,
         keterangan: kas.keterangan,
@@ -65,9 +83,40 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
         jumlah: kas.jumlah,
         kategori: kas.kategori,
         anggotaId: kas.anggotaId || null,
+        bulanPembayaran: kas.bulanPembayaran || null,
       });
     }
   }, [kas]);
+
+  // Check pembayaran bulanan ketika anggota dan bulan dipilih
+  useEffect(() => {
+    const checkPembayaran = async () => {
+      if (user && formData.anggotaId && formData.bulanPembayaran && isIuranBulanan && !kas) {
+        try {
+          const pembayaran = await KasService.checkPembayaranBulanan(user.id, formData.anggotaId, formData.bulanPembayaran);
+          const anggota = anggotaList.find(a => a.id === formData.anggotaId);
+          const bulanLabel = MonthUtils.parseBulanToLabel(formData.bulanPembayaran);
+          
+          if (pembayaran.sudahBayar) {
+            if (MonthUtils.isCurrentMonth(formData.bulanPembayaran) && pembayaran.jumlahBayar >= 20000) {
+              setPembayaranInfo(`❌ ${anggota?.nama} sudah membayar iuran ${bulanLabel} sebesar Rp ${pembayaran.jumlahBayar.toLocaleString('id-ID')}. Tidak dapat menambah pembayaran untuk bulan ini.`);
+            } else {
+              setPembayaranInfo(`⚠️ ${anggota?.nama} sudah membayar iuran ${bulanLabel} sebesar Rp ${pembayaran.jumlahBayar.toLocaleString('id-ID')}. Pembayaran tambahan akan ditambahkan.`);
+            }
+          } else {
+            setPembayaranInfo(`✅ ${anggota?.nama} belum membayar iuran ${bulanLabel}. Silakan lanjutkan pembayaran.`);
+          }
+        } catch (error) {
+          console.error('Error checking pembayaran:', error);
+          setPembayaranInfo('');
+        }
+      } else {
+        setPembayaranInfo('');
+      }
+    };
+
+    checkPembayaran();
+  }, [user, formData.anggotaId, formData.bulanPembayaran, isIuranBulanan, anggotaList, kas]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -88,6 +137,26 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
       newErrors.kategori = 'Kategori harus dipilih';
     }
 
+    // Validasi khusus untuk iuran bulanan
+    if (isIuranBulanan) {
+      if (!formData.anggotaId) {
+        newErrors.anggotaId = 'Anggota harus dipilih untuk iuran bulanan';
+      }
+      
+      if (!formData.bulanPembayaran) {
+        newErrors.bulanPembayaran = 'Bulan pembayaran harus dipilih untuk iuran bulanan';
+      }
+      
+      if (formData.jenis !== 'masuk') {
+        newErrors.jenis = 'Iuran bulanan harus berupa kas masuk';
+      }
+
+      // Validasi pembayaran bulan ini sudah 20rb
+      if (pembayaranInfo.includes('❌')) {
+        newErrors.general = 'Tidak dapat menambah pembayaran untuk bulan yang sudah dibayar penuh';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,7 +169,49 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
   };
 
   const handleInputChange = (field: keyof KasFormData, value: string | number | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Handle kategori change
+    if (field === 'kategori') {
+      const isIuran = value === 'Iuran Bulanan';
+      setIsIuranBulanan(isIuran);
+      
+      if (isIuran) {
+        // Auto set ke kas masuk dan bulan ini untuk iuran
+        setFormData(prev => ({
+          ...prev,
+          kategori: value as string,
+          jenis: 'masuk',
+          bulanPembayaran: MonthUtils.getCurrentMonth(),
+          jumlah: 20000, // Default 20rb
+        }));
+      } else {
+        // Reset bulan pembayaran jika bukan iuran
+        setFormData(prev => ({
+          ...prev,
+          kategori: value as string,
+          bulanPembayaran: null,
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+    
+    // Auto generate keterangan untuk iuran bulanan
+    if ((field === 'anggotaId' || field === 'bulanPembayaran' || field === 'jumlah') && isIuranBulanan) {
+      setTimeout(() => {
+        setFormData(prev => {
+          const anggota = anggotaList.find(a => a.id === (field === 'anggotaId' ? value : prev.anggotaId));
+          const bulan = field === 'bulanPembayaran' ? value as string : prev.bulanPembayaran;
+          const jumlah = field === 'jumlah' ? value as number : prev.jumlah;
+          
+          if (anggota && bulan && jumlah) {
+            const keterangan = MonthUtils.generateKeteranganIuran(anggota.nama, bulan, jumlah);
+            return { ...prev, keterangan };
+          }
+          return prev;
+        });
+      }, 100);
+    }
+    
     // Clear error untuk field yang sedang diubah
     if (errors[field]) {
       const newErrors = { ...errors };
@@ -223,24 +334,71 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
           {/* Anggota */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Anggota (Opsional)
+              {isIuranBulanan ? 'Anggota *' : 'Anggota (Opsional)'}
             </label>
             <select
               value={formData.anggotaId || ''}
               onChange={(e) => handleInputChange('anggotaId', e.target.value || null)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.anggotaId ? 'border-red-500' : 'border-gray-300'
+              }`}
             >
-              <option value="">Tidak terkait dengan anggota</option>
+              <option value="">{isIuranBulanan ? 'Pilih anggota...' : 'Tidak terkait dengan anggota'}</option>
               {anggotaList.map(anggota => (
                 <option key={anggota.id} value={anggota.id}>
                   {anggota.nama} ({anggota.nickname})
                 </option>
               ))}
             </select>
-            <p className="text-gray-500 text-xs mt-1">
-              Pilih anggota jika transaksi ini terkait dengan anggota tertentu
-            </p>
+            {errors.anggotaId && (
+              <p className="text-red-500 text-xs mt-1">{errors.anggotaId}</p>
+            )}
+            {!isIuranBulanan && (
+              <p className="text-gray-500 text-xs mt-1">
+                Pilih anggota jika transaksi ini terkait dengan anggota tertentu
+              </p>
+            )}
           </div>
+
+          {/* Bulan Pembayaran - hanya muncul jika kategori Iuran Bulanan */}
+          {isIuranBulanan && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bulan Pembayaran *
+              </label>
+              <select
+                value={formData.bulanPembayaran || ''}
+                onChange={(e) => handleInputChange('bulanPembayaran', e.target.value || null)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.bulanPembayaran ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Pilih bulan pembayaran...</option>
+                {bulanOptions.map(bulan => (
+                  <option key={bulan.value} value={bulan.value}>
+                    {bulan.label} {bulan.isCurrent ? '(Bulan Ini)' : bulan.isPast ? '(Bulan Lalu)' : '(Bulan Depan)'}
+                  </option>
+                ))}
+              </select>
+              {errors.bulanPembayaran && (
+                <p className="text-red-500 text-xs mt-1">{errors.bulanPembayaran}</p>
+              )}
+              <p className="text-gray-500 text-xs mt-1">
+                Bulan ini: pembayaran hanya boleh jika belum bayar 20rb. Bulan lalu/depan: selalu boleh bayar.
+              </p>
+            </div>
+          )}
+
+          {/* Info Pembayaran */}
+          {pembayaranInfo && (
+            <div className={`p-3 rounded-lg text-sm ${
+              pembayaranInfo.includes('❌') ? 'bg-red-50 text-red-700 border border-red-200' :
+              pembayaranInfo.includes('⚠️') ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+              'bg-green-50 text-green-700 border border-green-200'
+            }`}>
+              {pembayaranInfo}
+            </div>
+          )}
 
           {/* Keterangan */}
           <div>
@@ -250,14 +408,20 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
             <textarea
               value={formData.keterangan}
               onChange={(e) => handleInputChange('keterangan', e.target.value)}
-              placeholder="Masukkan keterangan transaksi..."
+              placeholder={isIuranBulanan ? 'Keterangan akan dibuat otomatis...' : 'Masukkan keterangan transaksi...'}
               rows={3}
+              readOnly={isIuranBulanan}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
                 errors.keterangan ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${isIuranBulanan ? 'bg-gray-50 text-gray-600' : ''}`}
             />
             {errors.keterangan && (
               <p className="text-red-500 text-xs mt-1">{errors.keterangan}</p>
+            )}
+            {isIuranBulanan && (
+              <p className="text-gray-500 text-xs mt-1">
+                Keterangan dibuat otomatis berdasarkan anggota, bulan, dan jumlah pembayaran
+              </p>
             )}
           </div>
 
@@ -281,6 +445,13 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
               <p className="text-red-500 text-xs mt-1">{errors.jumlah}</p>
             )}
           </div>
+
+          {/* General Error */}
+          {errors.general && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{errors.general}</p>
+            </div>
+          )}
         </form>
 
         {/* Footer */}

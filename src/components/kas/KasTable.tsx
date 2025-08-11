@@ -1,4 +1,5 @@
 import { Kas } from '@/types/kas';
+import { MonthUtils } from '@/lib/monthUtils';
 
 interface KasTableProps {
   data: Kas[];
@@ -55,6 +56,9 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
                 Anggota
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Bulan Iuran
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Kategori
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -95,6 +99,21 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
                           {kas.anggota.nama}
                         </div>
                       </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 italic">-</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {kas.bulanPembayaran ? (
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-blue-600">
+                        {MonthUtils.parseBulanToLabel(kas.bulanPembayaran)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {MonthUtils.isCurrentMonth(kas.bulanPembayaran) ? 'Bulan Ini' :
+                         MonthUtils.isPastMonth(kas.bulanPembayaran) ? 'Bulan Lalu' : 'Bulan Depan'}
+                      </span>
                     </div>
                   ) : (
                     <span className="text-gray-400 italic">-</span>
