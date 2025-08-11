@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Kas, KasFormData } from '@/types/kas';
+import { Anggota } from '@/types/anggota';
+import { AnggotaService } from '@/services/anggotaService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface KasFormProps {
   kas?: Kas | null;
@@ -8,12 +11,15 @@ interface KasFormProps {
 }
 
 export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
+  const { user } = useAuth();
+  const [anggotaList, setAnggotaList] = useState<Anggota[]>([]);
   const [formData, setFormData] = useState<KasFormData>({
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: '',
     jenis: 'masuk',
     jumlah: 0,
     kategori: '',
+    anggotaId: null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -34,6 +40,21 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
     'Lainnya',
   ];
 
+  // Load anggota list saat component mount
+  useEffect(() => {
+    const loadAnggota = async () => {
+      if (user) {
+        try {
+          const data = await AnggotaService.getAll(user.id);
+          setAnggotaList(data.filter(anggota => anggota.status === 'aktif'));
+        } catch (error) {
+          console.error('Error loading anggota:', error);
+        }
+      }
+    };
+    loadAnggota();
+  }, [user]);
+
   // Fill form jika editing
   useEffect(() => {
     if (kas) {
@@ -43,6 +64,7 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
         jenis: kas.jenis,
         jumlah: kas.jumlah,
         kategori: kas.kategori,
+        anggotaId: kas.anggotaId || null,
       });
     }
   }, [kas]);
@@ -77,7 +99,7 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
     }
   };
 
-  const handleInputChange = (field: keyof KasFormData, value: string | number) => {
+  const handleInputChange = (field: keyof KasFormData, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error untuk field yang sedang diubah
     if (errors[field]) {
@@ -196,6 +218,28 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
             {errors.kategori && (
               <p className="text-red-500 text-xs mt-1">{errors.kategori}</p>
             )}
+          </div>
+
+          {/* Anggota */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Anggota (Opsional)
+            </label>
+            <select
+              value={formData.anggotaId || ''}
+              onChange={(e) => handleInputChange('anggotaId', e.target.value || null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Tidak terkait dengan anggota</option>
+              {anggotaList.map(anggota => (
+                <option key={anggota.id} value={anggota.id}>
+                  {anggota.nama} ({anggota.nickname})
+                </option>
+              ))}
+            </select>
+            <p className="text-gray-500 text-xs mt-1">
+              Pilih anggota jika transaksi ini terkait dengan anggota tertentu
+            </p>
           </div>
 
           {/* Keterangan */}

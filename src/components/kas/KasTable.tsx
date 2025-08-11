@@ -52,6 +52,9 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
                 Keterangan
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Anggota
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Kategori
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -75,6 +78,27 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
                   <div className="max-w-xs truncate" title={kas.keterangan}>
                     {kas.keterangan}
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {kas.anggota ? (
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                        <span className="text-xs font-medium text-blue-600">
+                          {kas.anggota.nickname.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {kas.anggota.nickname}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {kas.anggota.nama}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 italic">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">

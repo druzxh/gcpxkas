@@ -92,7 +92,9 @@ export default function KasPage() {
   // Filter dan search data
   const filteredData = kasData.filter(kas => {
     const matchesSearch = kas.keterangan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         kas.kategori.toLowerCase().includes(searchTerm.toLowerCase());
+                         kas.kategori.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (kas.anggota?.nama && kas.anggota.nama.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (kas.anggota?.nickname && kas.anggota.nickname.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filterJenis === 'all' || kas.jenis === filterJenis;
     return matchesSearch && matchesFilter;
   });
@@ -107,7 +109,9 @@ export default function KasPage() {
         </div>
 
         {/* Stats */}
-        <KasStats data={kasData} />
+        <div className="mb-6">
+          <KasStats data={kasData} />
+        </div>
 
         {/* Error Message */}
         {error && (
@@ -138,7 +142,7 @@ export default function KasPage() {
               <div className="flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Cari keterangan atau kategori..."
+                  placeholder="Cari keterangan, kategori, atau nama anggota..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

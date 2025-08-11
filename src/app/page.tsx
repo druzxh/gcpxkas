@@ -132,13 +132,13 @@ export default function Dashboard() {
               <KasStats data={kasData} />
             </div>
 
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Anggota</h2>
               <AnggotaStats data={anggotaData} />
-            </div>
+            </div> */}
 
             {/* Keterangan Summary Table */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Ringkasan per Keterangan</h2>
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {keteranganSummary.length > 0 ? (
@@ -224,7 +224,7 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            </div>
+            </div> */}
           </>
         )}
 
@@ -354,7 +354,7 @@ export default function Dashboard() {
             </div>
 
             {/* Keterangan Summary */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            {/* <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Ringkasan Keterangan</h3>
               {keteranganSummary.length > 0 ? (
                 <div className="space-y-4">
@@ -388,7 +388,7 @@ export default function Dashboard() {
                   <p className="text-gray-500">Belum ada ringkasan keterangan</p>
                 </div>
               )}
-            </div>
+            </div> */}
             </div>
           </div>
         )}
