@@ -27,7 +27,7 @@ export class KasService {
 
     if (error) throw error;
     
-    return data.map(item => ({
+    const kasData = data.map(item => ({
       id: item.id,
       jenis: item.jenis,
       jumlah: item.jumlah,
@@ -40,6 +40,31 @@ export class KasService {
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     }));
+
+    // Urutkan berdasarkan bulan iuran terlebih dahulu, lalu tanggal
+    return kasData.sort((a, b) => {
+      // Jika keduanya memiliki bulan pembayaran, urutkan berdasarkan bulan pembayaran (terbaru dulu)
+      if (a.bulanPembayaran && b.bulanPembayaran) {
+        const bulanA = a.bulanPembayaran;
+        const bulanB = b.bulanPembayaran;
+        if (bulanA !== bulanB) {
+          return bulanB.localeCompare(bulanA); // Urutkan terbaru dulu (2025-12 > 2025-01)
+        }
+        // Jika bulan sama, urutkan berdasarkan tanggal transaksi (terbaru dulu)
+        return new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime();
+      }
+      
+      // Jika hanya salah satu yang memiliki bulan pembayaran, prioritaskan yang ada bulan pembayaran
+      if (a.bulanPembayaran && !b.bulanPembayaran) {
+        return -1; // a (dengan bulan) lebih tinggi
+      }
+      if (!a.bulanPembayaran && b.bulanPembayaran) {
+        return 1; // b (dengan bulan) lebih tinggi
+      }
+      
+      // Jika keduanya tidak memiliki bulan pembayaran, urutkan berdasarkan tanggal (terbaru dulu)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   }
 
   static async create(userId: string, data: KasFormData): Promise<Kas> {
