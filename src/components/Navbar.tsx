@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  // const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/' },
@@ -45,7 +45,6 @@ export default function Navbar() {
           
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {/* {user?.email} */}
               Administrator
             </span>
             <button
