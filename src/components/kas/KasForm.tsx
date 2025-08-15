@@ -376,7 +376,7 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
                 <option value="">Pilih bulan pembayaran...</option>
                 {bulanOptions.map(bulan => (
                   <option key={bulan.value} value={bulan.value}>
-                    {bulan.label} {bulan.isCurrent ? '(Bulan Ini)' : bulan.isPast ? '(Bulan Lalu)' : '(Bulan Depan)'}
+                    {bulan.label} {bulan.isCurrent ? '(Bulan Ini)' : bulan.isPast ? '(Bulan Lalu)' : '(Masa Depan)'}
                   </option>
                 ))}
               </select>
@@ -384,7 +384,7 @@ export default function KasForm({ kas, onSubmit, onCancel }: KasFormProps) {
                 <p className="text-red-500 text-xs mt-1">{errors.bulanPembayaran}</p>
               )}
               <p className="text-gray-500 text-xs mt-1">
-                Bulan ini: pembayaran hanya boleh jika belum bayar 20rb. Bulan lalu/depan: selalu boleh bayar.
+                Bulan ini: pembayaran hanya boleh jika belum bayar 20rb. Bulan lalu/masa depan: selalu boleh bayar.
               </p>
             </div>
           )}

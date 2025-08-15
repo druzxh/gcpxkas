@@ -95,7 +95,7 @@ export default function KasTable({ data, onEdit, onDelete }: KasTableProps) {
 
   return (
     <div className="space-y-6">
-      {groupedData.map((group, groupIndex) => (
+      {groupedData.map((group) => (
         <div key={group.bulanIuran || 'non-iuran'} className="bg-white rounded-lg shadow-sm overflow-hidden">
           {/* Header Grup */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">

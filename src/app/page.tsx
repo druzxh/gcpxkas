@@ -152,7 +152,7 @@ export default function Dashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Dashboard Bulanan
+                Statistik
               </button>
             </nav>
           </div>
@@ -183,7 +183,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Overview Tab Content */}
-            {activeTab === 'overview' && (
+            {activeTab === 'iuran' && (
               <>
                 {/* Stats Overview */}
                 <div className="mb-8">
@@ -477,7 +477,7 @@ export default function Dashboard() {
             )}
 
             {/* Iuran Tab Content */}
-            {activeTab === 'iuran' && (
+            {activeTab === 'overview' && (
               <div className="space-y-6">
                 <IuranTable />
               </div>

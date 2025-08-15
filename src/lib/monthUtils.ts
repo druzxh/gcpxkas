@@ -2,7 +2,7 @@ import { BulanOption } from '@/types/kas';
 
 export class MonthUtils {
   /**
-   * Generate options bulan untuk dropdown (6 bulan ke belakang, bulan ini, 1 bulan ke depan)
+   * Generate options bulan untuk dropdown (6 bulan ke belakang, bulan ini, sampai akhir tahun ini)
    */
   static generateBulanOptions(): BulanOption[] {
     const options: BulanOption[] = [];
@@ -10,8 +10,11 @@ export class MonthUtils {
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth(); // 0-11
 
-    // Generate dari 6 bulan ke belakang sampai 1 bulan ke depan
-    for (let i = -6; i <= 1; i++) {
+    // Generate dari 6 bulan ke belakang sampai akhir tahun ini (Desember)
+    const monthsToEnd = 11 - currentMonth; // Bulan yang tersisa sampai Desember
+    const endRange = Math.max(1, monthsToEnd); // Minimal 1 bulan ke depan
+    
+    for (let i = -6; i <= endRange; i++) {
       const targetDate = new Date(currentYear, currentMonth + i, 1);
       const year = targetDate.getFullYear();
       const month = targetDate.getMonth(); // 0-11

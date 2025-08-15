@@ -45,7 +45,8 @@ export default function Navbar() {
           
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {user?.email}
+              {/* {user?.email} */}
+              Administrator
             </span>
             <button
               onClick={handleSignOut}

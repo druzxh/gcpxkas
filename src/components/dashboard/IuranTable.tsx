@@ -202,8 +202,8 @@ export default function IuranTable() {
                 {/* Anggota Name - Sticky */}
                 <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap z-10 border-r border-gray-200">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{anggota.nama}</div>
-                    {/* <div className="text-sm text-gray-500">({anggota.nickname})</div> */}
+                    {/* <div className="text-sm font-medium text-gray-900">{anggota.nama}</div> */}
+                    <div className="text-sm text-gray-500">({anggota.nickname})</div>
                   </div>
                 </td>
                 
