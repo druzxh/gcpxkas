@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  // const { user, signOut } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/' },
